@@ -7,6 +7,11 @@
     <title>Farms Index - All Farms</title>
   </head>
   <body>
+    <!--messages is arrayObject of messages stored in flash area of session-->
+    <!-- if no message were stored in flash area of session - messages is an empty arrayObject -->
+    <%= messages %>
+    <!--clears messages stored in flash area of session (ie arrayObject) after viewing-->
+
     <h1>All Farms</h1>
     <ul>
       <% for(let f of farms){%>

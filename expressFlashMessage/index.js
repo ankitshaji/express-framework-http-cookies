@@ -8,6 +8,8 @@ const app = express(); //AppObject
 const mongoose = require("mongoose"); //mongooseObject //mongoose module
 const FarmClassObject = require("./models/farm"); //FarmClassObject(ie Model) //self created module/file needs "./"
 const methodOverride = require("method-override"); //functionObject //method-override module
+const session = require("express-session"); //functionObject //express-session module
+const flash = require("connect-flash"); //functionObject //connect-flash module
 
 // ********************************************************************************
 // CONNECT - nodeJS runtime app connects to default mogod server port + creates db
@@ -30,6 +32,36 @@ mongoose
 //Dont need to nest code inside callback - Operation Buffering
 //mongoose lets us use models immediately,without wainting
 //for mongoose to eastablish a connection to MongoDB
+
+// *************************************************************************************************************************************
+//(Third party)middleware(hook) function expressions and (express built-in) middleware(hook)methods - Order matters for next() execution
+// *************************************************************************************************************************************
+//(Application-level middleware) - bind middlewareCallback to appObject with app.use() or app.method()
+//app.use(middlewareCallback) - argument is middlewareCallback
+
+const sessionOptionsObject = {
+  secret: "thisismysecret",
+  resave: false,
+  saveUninitialized: false,
+};
+app.use(session(sessionOptionsObject)); //adds session property to reqObject
+app.use(flash()); //adds flash() method to reqObjects
+//flash message - (connect-flash module - show a temporary message - erased on page refresh
+//flash-message middleware creates a flash() method on reqObject
+//we use this method to create a message after an action(create,delete,login,logout) and before a redirect
+//req.flash("categoryKey","messageValue") - message gets stored in flash area of session ie arrayObject
+//subsequent requests can retrive the stored message from the flash area of session with req.flash("categoryKey") ie arrayObject
+//if no message was stored in flash area of session req.flash("unusedCategoryKey") gives us empty arrayObject
+//this makes the req.flash("categoryKey") ie message arrayObject available to be passed in as a variable in the next ejs template file render method
+//clears messages stored in flash area of session req.flash("categoryKey") (ie arrayObject) after viewing
+
+//alternative way to pass variable into every ejs template file - //properties of localObject
+// app.use((req, res, next) => {
+//   //retrive the stored messages in the flash area of session with req.flash("categoryKey") ie arrayObject
+//   req.locals.messages = req.flash("success"); //localsObject.property, property = variable passed into every ejs template file
+//   res.locals.errors = req.flash("errors") //localsObject.property, property = variable passed into every ejs template file
+//   next(); //pass to next middlewareCallback
+// });
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "/views"));
@@ -54,7 +86,11 @@ app.get("/farms", async (req, res) => {
   // *****************************************************
   //FarmClassObject.method(queryObject) ie modelClassObject.method() - same as - db.farms.find({})
   const foundFarms = await FarmClassObject.find({}); //products = dataObject ie array of all jsObjects(documents)
-  res.render("farms/index", { farms: foundFarms });
+  res.render("farms/index", {
+    farms: foundFarms,
+    //retrive the stored messages in the flash area of session with req.flash("categoryKey") ie arrayObject + pass arrayObject of messages to messages variable
+    messages: req.flash("success"),
+  });
 });
 
 //route 2
@@ -78,6 +114,9 @@ app.post("/farms", async (req, res) => {
   const newFarm = new FarmClassObject(req.body); //form data/req.body
   //creates (farms)collection in (farmStanddb3)db and adds (newFarm)document into the (farms)collection
   const savedFarm = await newFarm.save(); //savedFarm = dataObject ie created jsObject(document)
+  //reqObject.method("categoryKey","messageValue")
+  //creating a message and storing it in the flash area of the session ie an arrayObject of messages (req.flash("categoryKey"))
+  req.flash("success", "Successfully made a farm");
   res.redirect(`/farms`);
 });
 
