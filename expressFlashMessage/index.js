@@ -58,7 +58,7 @@ app.use(flash()); //adds flash() method to reqObjects
 //alternative way to pass variable into every ejs template file - //properties of localObject
 // app.use((req, res, next) => {
 //   //retrive the stored messages in the flash area of session with req.flash("categoryKey") ie arrayObject
-//   req.locals.messages = req.flash("success"); //localsObject.property, property = variable passed into every ejs template file
+//   res.locals.messages = req.flash("success"); //localsObject.property, property = variable passed into every ejs template file
 //   res.locals.errors = req.flash("errors") //localsObject.property, property = variable passed into every ejs template file
 //   next(); //pass to next middlewareCallback
 // });
