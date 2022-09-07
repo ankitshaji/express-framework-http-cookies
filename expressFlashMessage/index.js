@@ -33,6 +33,17 @@ mongoose
 //mongoose lets us use models immediately,without wainting
 //for mongoose to eastablish a connection to MongoDB
 
+//flash messages - connect-flash module - show a temporary message on ejs template file - erased on page refresh
+//flash-messages middlewareCallback creates a flash() method on every reqObject -
+//req.flash("categoryKey","messageValue")
+//we use this method to store a message in the flash property of current sessoinObject assosicated with current sessionID which was unsigned from signed cookie in request header from specific client or newly created
+//we call this method after an action(eg.create,delete,login,logout) and before a redirect occurs
+//subsequent requests can retrive the stored messages from the flash property of current sessionObject assosicated with current sessionID - unsigned from signed cookie in request header from specific client
+//req.flash("categoryKey") returns messagesArrayObject
+//we pass req.flash("categoryKey")'s messagesArrayObject as variable to ejs template file through res.render()
+//we can only access req.flash("categoryKeys") messageArrayObject once per request before it is erased.
+//req.flash("undefinedCategoryKey" OR "alreadyUsedCategoryKey") returns empty messageArrayObject
+
 // *************************************************************************************************************************************
 //(Third party)middleware(hook) function expressions and (express built-in) middleware(hook)methods - Order matters for next() execution
 // *************************************************************************************************************************************
@@ -44,30 +55,38 @@ const sessionOptionsObject = {
   resave: false,
   saveUninitialized: false,
 };
-app.use(session(sessionOptionsObject)); //adds session property to reqObject
-app.use(flash()); //adds flash() method to reqObjects
-//flash message - (connect-flash module - show a temporary message - erased on page refresh
-//flash-message middleware creates a flash() method on reqObject
-//we use this method to create a message after an action(create,delete,login,logout) and before a redirect
-//req.flash("categoryKey","messageValue") - message gets stored in flash area of session ie arrayObject
-//subsequent requests can retrive the stored message from the flash area of session with req.flash("categoryKey") ie arrayObject
-//if no message was stored in flash area of session req.flash("unusedCategoryKey") gives us empty arrayObject
-//this makes the req.flash("categoryKey") ie message arrayObject available to be passed in as a variable in the next ejs template file render method
-//clears messages stored in flash area of session req.flash("categoryKey") (ie arrayObject) after viewing
-
+app.use(session(sessionOptionsObject));
 //code
-//req.session.flash - flash property is added on sessionObject, ie an object containing "categoryKey" as properties and their corresponding messageArray as value
-//req.flash("categoryKey") returns array of messages of that "categoryKey"
-//req.flash("categoryKey","messageValue") returns count number of messages with that categoryKey
+//express-sessions middlewareCallback creates these properties on reqObject
+//req.sessionID - stores currently received sessionID from the signed cookie in (http structured) reqest header OR newly created sessionID
+//req.session.id - same
+//req.session - current session jsObejct of current sessionID - assosicated to newly created/pre existing temporary data store
+//req.session is used to add/retrive data to/from the newly created/pre exisintg temporary data store,
+//specifically to add/retrive data where id is current sessionID  - (req.session.property )
+//req.sessionStore - stores the newly created/pre existing temporary data store
 
-//alternative way to pass variable into every ejs template file - //properties of localObject
+app.use(flash());
+//code
+//flash-messages middlewareCallback creates thses properties and methods on reqObject
+//req.session.flash - a flash property is added on current sessionObject, flashObject contains "categoryKey" as properties and their corresponding messagesArrayObject as value
+//req.flash("categoryKey","messageValue") - stores "messageValue" in messagesArrayObject value of specifc categoryKey property in the flash property of current sessoinObject assosicated with current sessionID which was unsigned from signed cookie in request header from specific client or newly created
+//method returns count of messages in messageArrayObject relating to that "categoryKey"
+//req.flash("categoryKey") - retrives messagesArrayObject value of specifc categoryKey property from the flash property of current sessoinObject assosicated with current sessionID which was unsigned from signed cookie in request header from specific client or newly created
+//method returns messageArrayObject with messages relating to that "categoryKey"
+//we can only access req.flash("categoryKey") - ie messagesArrayObject value of specifc categoryKey property once per request before it is erased from flash property of current sessionObject assosicated with current sessionID which was unsigned from signed cookie in request header from specific client or newly created
+//req.flash("undefinedCategoryKey" OR "alreadyUsedCategoryKey") returns empty messageArrayObject
+
+//alternative way to pass variable into every ejs template file - //propertie in localObject is a variable in ejs template file
 // app.use((req, res, next) => {
-//   //retrive the stored messages in the flash area of session with req.flash("categoryKey") ie arrayObject
+//   //req.flash("categoryKey") - retrives messagesArrayObject value of specifc categoryKey property from the flash property of current sessoinObject assosicated with current sessionID which was unsigned from signed cookie in request header from specific client or newly created
 //   res.locals.messages = req.flash("success"); //localsObject.property, property = variable passed into every ejs template file
-//   res.locals.errors = req.flash("errors") //localsObject.property, property = variable passed into every ejs template file
+//   res.locals.errors = req.flash("errors")
 //   next(); //pass to next middlewareCallback
 // });
 
+app.use((req, res, next) => {
+  next();
+});
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "/views"));
 app.use(methodOverride("_method"));
@@ -91,9 +110,12 @@ app.get("/farms", async (req, res) => {
   // *****************************************************
   //FarmClassObject.method(queryObject) ie modelClassObject.method() - same as - db.farms.find({})
   const foundFarms = await FarmClassObject.find({}); //products = dataObject ie array of all jsObjects(documents)
+
+  //send signed cookie in (http strucutred) response header - contains sessionID for client to store to retrive data from data store
   res.render("farms/index", {
     farms: foundFarms,
-    //retrive the stored messages in the flash area of session with req.flash("categoryKey") ie arrayObject + pass arrayObject of messages to messages variable
+    //retrives messagesArrayObject value of specifc categoryKey property from the flash property of current sessoinObject assosicated with current sessionID which was unsigned from signed cookie in request header from specific client or newly created
+    //passes messageArrayObject to messages variable
     messages: req.flash("success"),
   });
 });
@@ -119,9 +141,11 @@ app.post("/farms", async (req, res) => {
   const newFarm = new FarmClassObject(req.body); //form data/req.body
   //creates (farms)collection in (farmStanddb3)db and adds (newFarm)document into the (farms)collection
   const savedFarm = await newFarm.save(); //savedFarm = dataObject ie created jsObject(document)
+
   //reqObject.method("categoryKey","messageValue")
-  //creating a message and storing it in the flash area of the session ie an arrayObject of messages (req.flash("categoryKey"))
+  //stores "messageValue" in messagesArrayObject value of specifc categoryKey property in the flash property of current sessoinObject assosicated with current sessionID which was unsigned from signed cookie in request header from specific client or newly created
   req.flash("success", "Successfully made a farm");
+  //send signed cookie in (http strucutred) response header - contains sessionID for client to store to retrive data from data store
   res.redirect(`/farms`);
 });
 
@@ -137,6 +161,8 @@ app.get("/farms/:id", async (req, res) => {
   //FarmClassObject.method(idString) ie modelClassObject.method() - same as - db.farms.findOne({_id:"12345"})
   //find modelInstanceObject(ie document) that matches id -> thenableObject(resolved,foundFarm)
   const foundFarm = await FarmClassObject.findById(id); //foundFarm = dataObject ie single first matching jsObject(document)
+
+  //send signed cookie in (http strucutred) response header - contains sessionID for client to store to retrive data from data store
   res.render("farms/show", { farm: foundFarm });
 });
 
@@ -152,6 +178,8 @@ app.delete("/farms/:id", async (req, res) => {
   //FarmClassObject.method(idString) ie modelClassObject.method() - same as - db.farms.findOneAndDelete(({_id:"12345"})
   //queries (farms)collection of (farmStanddb3)db for single document by idString and deletes the document
   const deletedFarm = await FarmClassObject.findByIdAndDelete(id); //deletedFarm = dataObject ie single first matching jsObject(document) that was deleted
+
+  //send signed cookie in (http strucutred) response header - contains sessionID for client to store to retrive data from data store
   res.redirect("/farms");
 });
 

@@ -30,8 +30,8 @@ const cookieParser = require("cookie-parser"); //functionObject //cookie-parser 
 //Case2 - signed cookie -
 //client(browser) sends (http structured) request to server/webApi/website
 //if route path is /setsignedfruit -
-//if cookie-parser middleware contains optionalArgument "secretString" and res.cookie() contained optionaArguemntObject {signed:true}
-//cookie-parser middleware signs the value of the normal cookie using the "secretString" + sha56HashFunction - creating the signed cookie with HMACValue
+//if cookie-parsers middlewareCreationFunction contains optionalArgument "secretString" and res.cookie() contained optionaArguemntObject {signed:true}
+//cookie-parsers middlewareCallback signs the value of the normal cookie using the "secretString" + sha56HashFunction - creating the signed cookie with HMACValue
 //server sets signed cookie in resObject header  - res.cookie("name","hnrietta",{signed:true})
 //then converts/sends resObject as (http structured) response to the client , containing header (Set-Cookie:key:value)
 //we can see the signed cookie in
@@ -45,7 +45,7 @@ const cookieParser = require("cookie-parser"); //functionObject //cookie-parser 
 //we update signed cookie in our client by going to /setsignedfruit again
 //if route path is /verify and signed cookies already saved on client browser
 //we send signed cookie in this (http strcutured) request inside its header (Cookie:key:value)
-//cookie-parser middleware is needed to parse signed cookies in the header of the (http strucutred) request into unsigned cookies in req.Object.signedCookies jsObject
+//cookie-parsers middlewareCallback is needed to parse signed cookies in the header of the (http strucutred) request into unsigned cookies in reqObject.signedCookies jsObject
 //itegrity verification is done by unsigning the signed cookie
 //unsigning process -
 //since the signed cookie HMACvalue was signed at the start using the same "secreString" + sha256HashFunction
@@ -68,14 +68,22 @@ const cookieParser = require("cookie-parser"); //functionObject //cookie-parser 
 //(Third party) - was part of express framework
 //middlewareCreationFunctionObject(optionalArgument- "secretString") -
 //middlewareCreationFunctionObject execution creates middlewareCallback
-//middlewareCallback -
-// Purpose: normal cookie in (http structured) request header (Cookie:key:value) is parsed to reqObject.cookies - {key:value,key:value} jsObject
-//middlewareCallback - had "secretString" optionalArgument during creation + res.cookies() optionsObject- {signed:true}
-//Purpose: sign the normal cookie with the "secretString" creating the signed cookie
-//Purpose: signed cookie in (http structured) request header (Cookie:key:value) is unsigned with "secretString" and parsed to reqObject.signedCookies - {key:value,key:value} jsObect
+//cookie-parsers middelwareCallback - (creates cookies/secrets/signedCookies property on reqObject - jsObject)
+//Purpose:when recieving request - normal cookie in (http structured) request header (Cookie:key:value) is parsed to reqObject.cookies - {key:value,key:value}
+//cookie-parsers middlewareCallback - had "secretString" optionalArgument during middlwareCallback creation + res.cookies() optionsObject- {signed:true}
+//(creates cookies/secrets/signedCookies property on reqObject - jsObject)
+//Purpose:when creating response - cookie-parsers middlwareCallback signs the normal cookie with the "secretString" creating the signed cookie - res.cookie("name","hnrietta",{signed:true})
+//Purpose:when recieving request - signed cookie in (http structured) request header (Cookie:key:value) is unsigned with "secretString" and parsed to reqObject.signedCookies - {key:value,key:value} jsObect
 //sidenode - (http structure) request could be from browser or postman
 app.use(cookieParser("thisismysecret")); //app.use(middlewareCallback) //app.use() lets us execute middlewareCallback on any http method/every (http structured) request to any path
 //middlewareCallback calls next() inside it to move to next middlewareCallback
+
+//code -
+//cookie() method already exists on resObject returns resObject
+//cookie-parser middleware creates these properties on reqObject-
+//req.cookies - stores received cookies jsObject
+//req.secrets  - stores secret string if in argument of middlwareCreationFunction
+//req.signedCookies - stores received signed cookies jsObejct
 
 // *****************************************************************************************
 //RESTful webApi crud operations pattern (route/pattern matching algorithm - order matters)
@@ -92,7 +100,7 @@ app.use(cookieParser("thisismysecret")); //app.use(middlewareCallback) //app.use
 //-nextCallback
 app.get("/greet", (req, res) => {
   //key to variable + default value - object destructure
-  const { name = "DefaultNameValue" } = req.cookies; //req.cookies - jsObject {cookieName:cookieValue}
+  const { name = "DefaultNameValue" } = req.cookies; //req.cookies - jsObject {cookieName:cookieValue} - retrive normal cookies
   res.send(`Hey there, ${name}`);
 });
 
@@ -108,7 +116,7 @@ app.get("/greet", (req, res) => {
 app.get("/setcookiename", (req, res) => {
   //resObject.method(cookieName,cookieValue,optionsObject) //optionsObject to change signed,expiry,domain,maxAge,secure etc
   //cookieValue can be string or jsObject converted to jsonString
-  res.cookie("name", "henrietta");
+  res.cookie("name", "henrietta"); //normal cookie creation
   res.cookie("animal", "harlequin shrimp"); //setting 2 cookies in resObject header
   res.send("Sent you a cookie");
 });
@@ -124,7 +132,7 @@ app.get("/setcookiename", (req, res) => {
 //-nextCallback
 app.get("/setsignedfruit", (req, res) => {
   //resObject.method(cookieName,cookieValue,optionsObject) //optionsObject - {signed:true}
-  res.cookie("fruit", "grape", { signed: true });
+  res.cookie("fruit", "grape", { signed: true }); //signed cookie creation - setting signed cookie in resObject header
   res.send("Sent you a signed cookie");
 });
 
