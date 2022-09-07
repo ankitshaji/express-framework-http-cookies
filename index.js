@@ -22,6 +22,11 @@ const session = require("express-session"); //functionObject //express-session m
 //when signed cookie of client expries then the temporary data store removes the data associated with that sessionID from itself
 //if client looses signed cookie, client cannot access the data associated to the sessionID in the temporary data store - eg logged in
 
+//code
+//req.session - session(jsObject) property on reqObject
+//req.sessionStore - sessionStore(jsObject) property on reqObject
+//req.sessionID - sessionID(jsObject) property on reqObect
+
 // *************************************************************************************************************************************
 //(Third party)middleware(hook) function expressions - Order matters for next() execution
 // *************************************************************************************************************************************
@@ -34,11 +39,11 @@ const session = require("express-session"); //functionObject //express-session m
 //middlewareCallback - During creation has "secretString" as sessionOptionObject's required argument
 //Purpose:
 //case1-
-//On first (http strucuted) request, express-session middleware auto create req.session jsObject (associated to new created temporary data store) and auto creates signed cookie with HMACValue - created from (req.session.id + "secretString" + sha256HashFunction)
+//On first (http strucuted) request, express-session middleware auto creates session(jsObject) property on reqObject (associated to new created temporary data store) and auto creates signed cookie with HMACValue - created from (req.session.id + "secretString" + sha256HashFunction)
 //it also auto sets this signed cookie in the resObjects header (Set-Cookie:key:value)
 //case2-
 //Subsequent (http strucutred) requests from same client contain signed cookie in its header (Cookie:key:value)
-//express-session middleware  auto recreates the same req.session jsObject (assoicated with the pre existing temporary data store)
+//express-session middleware auto recreates the same session(jsObject) property on reqObject (assoicated with the pre existing temporary data store)
 //express-session middleware unsigns the cookies HMACValue to get the specifc sessionID and uses it to look up the specfic clients stored data in the req.session jsObject (associated to temporary data store)
 //sidenode - (http structure) request could be from browserClients or postmanClients - each gets its own signed cookie containig its own sessionID
 const sessionOptionsObject = {

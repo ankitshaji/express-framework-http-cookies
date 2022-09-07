@@ -55,6 +55,11 @@ app.use(flash()); //adds flash() method to reqObjects
 //this makes the req.flash("categoryKey") ie message arrayObject available to be passed in as a variable in the next ejs template file render method
 //clears messages stored in flash area of session req.flash("categoryKey") (ie arrayObject) after viewing
 
+//code
+//req.session.flash - flash property is added on sessionObject, ie an object containing "categoryKey" as properties and their corresponding messageArray as value
+//req.flash("categoryKey") returns array of messages of that "categoryKey"
+//req.flash("categoryKey","messageValue") returns count number of messages with that categoryKey
+
 //alternative way to pass variable into every ejs template file - //properties of localObject
 // app.use((req, res, next) => {
 //   //retrive the stored messages in the flash area of session with req.flash("categoryKey") ie arrayObject
